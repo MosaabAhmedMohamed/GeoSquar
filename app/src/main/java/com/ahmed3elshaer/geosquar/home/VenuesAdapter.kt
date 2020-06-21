@@ -14,7 +14,6 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.ahmed3elshaer.geosquar.R
-import com.ahmed3elshaer.geosquar.common.loader.GlideApp
 import com.ahmed3elshaer.geosquar.common.models.Venue
 import kotlinx.android.synthetic.main.venue_item.view.*
 
@@ -44,10 +43,10 @@ class VenuesAdapter : RecyclerView.Adapter<VenuesAdapter.VenuesViewHolder>() {
         val context = itemView.context
         fun bind(venue: Venue) = with(itemView) {
 
-            GlideApp.with(context)
+          /*  GlideApp.with(context)
                     .load(venue)
                     .into(image_venue)
-
+*/
             text_name.text = venue.name
             text_address.text = venue.location.address
         }

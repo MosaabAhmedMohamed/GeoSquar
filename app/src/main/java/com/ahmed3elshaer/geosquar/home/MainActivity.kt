@@ -14,11 +14,14 @@ import android.util.Log
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.RecyclerView
+import androidx.sqlite.db.SupportSQLiteOpenHelper.Configuration.builder
 import com.ahmed3elshaer.geosquar.R
 import com.ahmed3elshaer.geosquar.common.Event
+import com.ahmed3elshaer.geosquar.common.SharedPrefWrapper
 import com.ahmed3elshaer.geosquar.common.extensions.changeMode
 import com.ahmed3elshaer.geosquar.common.extensions.hide
 import com.ahmed3elshaer.geosquar.common.extensions.isNetworkAvailable
@@ -26,17 +29,35 @@ import com.ahmed3elshaer.geosquar.common.extensions.isRealtime
 import com.ahmed3elshaer.geosquar.common.extensions.show
 import com.ahmed3elshaer.geosquar.common.location.RxLocationExt
 import com.ahmed3elshaer.geosquar.common.models.Venue
+import com.ahmed3elshaer.geosquar.di.HomeComponent
+import com.ahmed3elshaer.geosquar.di.HomeModules
 import com.google.android.material.snackbar.Snackbar
+import dagger.internal.DaggerCollections
 import io.reactivex.disposables.CompositeDisposable
 import kotlinx.android.synthetic.main.activity_main.*
-import org.koin.android.ext.android.inject
+import java.util.stream.DoubleStream.builder
+import javax.inject.Inject
 
 class MainActivity : AppCompatActivity() {
+
+    @Inject
+    lateinit var viewModelFactory: HomeViewModelFactory
+    @Inject
+    lateinit var sharedPrefWrapper: SharedPrefWrapper
+
+    private val viewModel by lazy {
+        ViewModelProvider(this, viewModelFactory)
+            .get(HomeViewModel::class.java)
+    }
+
     private val rxLocation: RxLocationExt = RxLocationExt()
     private val compositeDisposable = CompositeDisposable()
-    private val viewModel: HomeViewModel by inject()
     private lateinit var adapter: VenuesAdapter
     override fun onCreate(savedInstanceState: Bundle?) {
+      /*  DaggerHomeComponent.builder()
+            .magicModule(HomeModules(this))
+            .build()
+            .poke(this)*/
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         viewModel.viewState.observe(this, Observer {
@@ -64,9 +85,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun initModeChange() {
-        switch_mode.isChecked = isRealtime()
+        switch_mode.isChecked = isRealtime(sharedPrefWrapper)
         switch_mode.setOnCheckedChangeListener { _, isChecked ->
-            changeMode(isChecked)
+            changeMode(isChecked,sharedPrefWrapper)
             getLocation()
         }
     }
@@ -95,9 +116,9 @@ class MainActivity : AppCompatActivity() {
         if (isNetworkAvailable()) {
             rxLocation.stopLocationUpdates()
             compositeDisposable.add(
-                    rxLocation.locations(this, isRealtime())
+                    rxLocation.locations(this, isRealtime(sharedPrefWrapper))
                             .subscribe({ location ->
-                                viewModel.exploreVenues(location, isRealtime())
+                                viewModel.exploreVenues(location, isRealtime(sharedPrefWrapper))
                             },
                                     { error: Throwable ->
                                         renderError(error)
